@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useProfile } from '../../context/ProfileContext.jsx'
 import { getAthleteMatches, getAthleteActivity } from '../../lib/api/index.js'
-import { PageHeader, StatCard, SectionCard, StatusBadge, ScoreMeter, LoadingSpinner } from '../../components/shared/UI.jsx'
+import { StatCard, SectionCard, StatusBadge, ScoreMeter, LoadingSpinner } from '../../components/shared/UI.jsx'
 import { palette } from '../../lib/theme.js'
-import { Handshake, TrendingUp, Star, Activity, ArrowRight } from 'lucide-react'
+import { Handshake, TrendingUp, Star, Activity, ArrowRight, Zap, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+
+const QUICK_ACTIONS = [
+  { icon: Zap,       label: 'Find Matches',    sub: 'See who fits your brand', route: '/athlete/matches',      color: palette.pine },
+  { icon: Handshake, label: 'View Deals',      sub: 'Track active partnerships', route: '/athlete/matches',    color: '#1d4ed8'   },
+  { icon: Star,      label: 'Update Profile',  sub: 'Boost your match score',  route: '/athlete/edit-profile', color: '#7e22ce'   },
+]
 
 export default function AthleteOverview() {
   const { profile } = useProfile()
@@ -19,22 +26,76 @@ export default function AthleteOverview() {
   }, [profile?.id])
 
   if (loading) return <LoadingSpinner />
+
+  const firstName = profile?.name?.split(' ')[0] ?? 'Athlete'
+  const score = profile?.rootdScore ?? 82
   const activeDeals = matches.filter(m => m.status === 'approved' || m.status === 'active').length
+  const profilePct = 78
 
   return (
     <div>
-      <PageHeader title={`Welcome back, ${profile?.name?.split(' ')[0] ?? 'Athlete'}`} description={`${profile?.sport} · ${profile?.institution}`} />
+      {/* Hero welcome strip */}
+      <div style={{
+        background: `linear-gradient(135deg, ${palette.pine} 0%, ${palette.pineDark} 100%)`,
+        color: '#fff', padding: '32px 36px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px',
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 500 }}>
+            {profile?.sport ?? 'Athlete'} · {profile?.institution ?? 'Rootd OS'}
+          </p>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'Space Grotesk, sans-serif', marginBottom: '6px' }}>
+            Welcome back, {firstName} 👋
+          </h1>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.72)' }}>
+            You have <strong>{matches.length}</strong> active matches and <strong>{activeDeals}</strong> open deals.
+          </p>
+        </div>
+
+        {/* Rootd Score highlight */}
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
+          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '16px', padding: '20px 28px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>Your RootdScore</p>
+          <ScoreMeter score={score} size="lg" />
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>Top 20% of athletes</p>
+        </motion.div>
+      </div>
+
       <div style={{ padding: '32px 36px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-          <StatCard label="Rootd Score" value={profile?.rootdScore ?? 82} tone="mint" icon={Star} helper="Top 20% of athletes" />
+
+        {/* Quick Actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '32px' }}>
+          {QUICK_ACTIONS.map((a, i) => (
+            <motion.button key={a.label}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+              onClick={() => navigate(a.route)}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'all 0.15s' }}
+              whileHover={{ borderColor: a.color, boxShadow: `0 4px 16px ${a.color}22` }}>
+              <div style={{ width: '36px', height: '36px', background: `${a.color}15`, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <a.icon size={18} color={a.color} />
+              </div>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: palette.charcoal }}>{a.label}</p>
+                <p style={{ fontSize: '12px', color: palette.charcoalMuted }}>{a.sub}</p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Stat cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          <StatCard label="Rootd Score" value={score} tone="mint" icon={Star} helper="Top 20% of athletes" />
           <StatCard label="Active Deals" value={activeDeals} tone="sky" icon={Handshake} />
           <StatCard label="Total Matches" value={matches.length} tone="sage" icon={TrendingUp} />
           <StatCard label="Profile Views" value="1.2k" tone="default" icon={Activity} helper="This month" />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+        {/* Matches + Activity */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
           <SectionCard title="Top Matches" tone="mint" action={
-            <button onClick={() => navigate('/athlete/matches')} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: palette.pine, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={() => navigate('/athlete/matches')}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: palette.pine, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}>
               View all <ArrowRight size={14} />
             </button>
           }>
@@ -55,8 +116,8 @@ export default function AthleteOverview() {
           <SectionCard title="Recent Activity" tone="sky">
             {activity.map(a => (
               <div key={a.id} style={{ display: 'flex', gap: '12px', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <div style={{ width: '32px', height: '32px', background: palette.sage, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Activity size={15} color={palette.pine} />
+                <div style={{ width: '32px', height: '32px', background: '#eff6ff', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Activity size={15} color="#1d4ed8" />
                 </div>
                 <div>
                   <p style={{ fontSize: '13px', color: palette.charcoal }}>{a.text}</p>
@@ -67,15 +128,25 @@ export default function AthleteOverview() {
           </SectionCard>
         </div>
 
-        <SectionCard title="Profile Completion" tone="sage">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Profile completion */}
+        <SectionCard title="Profile Completion" tone="sage" subtitle="A complete profile gets 3× more business matches">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
             <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
-              <div style={{ width: '78%', height: '100%', background: palette.pine, borderRadius: '999px' }} />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${profilePct}%` }} transition={{ duration: 0.8, delay: 0.3 }}
+                style={{ height: '100%', background: `linear-gradient(90deg, ${palette.pine}, ${palette.pineLight})`, borderRadius: '999px' }} />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: palette.pine, whiteSpace: 'nowrap' }}>78% Complete</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: palette.pine, whiteSpace: 'nowrap' }}>{profilePct}%</span>
           </div>
-          <p style={{ fontSize: '13px', color: palette.charcoalMuted, marginTop: '10px' }}>Add your social media handles and bio to improve your match quality.</p>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            {['Basic info', 'Sport & school', 'Brand interests', 'Social handles'].map((item, i) => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: i < 2 ? palette.pine : palette.charcoalMuted }}>
+                <CheckCircle size={13} color={i < 2 ? palette.pine : '#d1d5db'} />
+                {item}
+              </div>
+            ))}
+          </div>
         </SectionCard>
+
       </div>
     </div>
   )

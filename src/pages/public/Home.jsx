@@ -7,13 +7,6 @@ import {
 import { Button } from '../../components/shared/UI.jsx'
 import { palette } from '../../lib/theme.js'
 
-const STATS = [
-  { value: '500+', label: 'Athletes Matched' },
-  { value: '200+', label: 'Local Businesses' },
-  { value: '50+',  label: 'Universities' },
-  { value: '$2M+', label: 'NIL Value Tracked' },
-]
-
 const PERSONAS = [
   {
     label: 'College Athlete',
@@ -122,17 +115,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ── Stats Bar ── */}
-      <section style={{ background:palette.cream, borderBottom:'1px solid #e0d9cc' }}>
-        <div style={{ maxWidth:'900px', margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', textAlign:'center' }}>
-          {STATS.map((s, i) => (
-            <div key={s.label} style={{ padding:'28px 16px', borderRight: i < 3 ? '1px solid #e0d9cc' : 'none' }}>
-              <p style={{ fontSize:'30px', fontWeight:800, color:palette.pine, fontFamily:'Space Grotesk, sans-serif', lineHeight:1 }}>{s.value}</p>
-              <p style={{ fontSize:'13px', color:palette.charcoalMuted, marginTop:'6px', fontWeight:500 }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ── Persona Cards ── */}
       <section style={{ padding:'80px 32px', background:'#fff' }}>

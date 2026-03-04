@@ -8,10 +8,22 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const QUICK_ACTIONS = [
-  { icon: Zap,       label: 'Find Matches',    sub: 'See who fits your brand', route: '/athlete/matches',      color: palette.pine },
-  { icon: Handshake, label: 'View Deals',      sub: 'Track active partnerships', route: '/athlete/matches',    color: '#1d4ed8'   },
-  { icon: Star,      label: 'Update Profile',  sub: 'Boost your match score',  route: '/athlete/edit-profile', color: '#7e22ce'   },
+  { icon: Zap,       label: 'Find Matches',   sub: 'See who fits your brand',    route: '/athlete/matches',      color: palette.pine },
+  { icon: Handshake, label: 'View Deals',     sub: 'Track active partnerships',  route: '/athlete/matches',      color: '#1d4ed8'    },
+  { icon: Star,      label: 'Update Profile', sub: 'Boost your match score',     route: '/athlete/edit-profile', color: '#7e22ce'    },
 ]
+
+// Compute profile completion from actual profile data
+function calcProfileCompletion(profile) {
+  const checks = [
+    { label: 'Basic info',      done: !!(profile?.name && profile?.email) },
+    { label: 'Sport & school',  done: !!(profile?.sport && profile?.institution) },
+    { label: 'Brand interests', done: !!(profile?.categories?.length) },
+    { label: 'Social handles',  done: !!(profile?.socialFollowers?.instagram || profile?.socialFollowers?.tiktok) },
+  ]
+  const pct = Math.round((checks.filter(c => c.done).length / checks.length) * 100)
+  return { checks, pct }
+}
 
 export default function AthleteOverview() {
   const { profile } = useProfile()
@@ -28,9 +40,9 @@ export default function AthleteOverview() {
   if (loading) return <LoadingSpinner />
 
   const firstName = profile?.name?.split(' ')[0] ?? 'Athlete'
-  const score = profile?.rootdScore ?? 82
+  const score = profile?.rootdScore ?? null
   const activeDeals = matches.filter(m => m.status === 'approved' || m.status === 'active').length
-  const profilePct = 78
+  const { checks, pct: profilePct } = calcProfileCompletion(profile)
 
   return (
     <div>
@@ -49,17 +61,28 @@ export default function AthleteOverview() {
             Welcome back, {firstName} 👋
           </h1>
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.72)' }}>
-            You have <strong>{matches.length}</strong> active matches and <strong>{activeDeals}</strong> open deals.
+            You have <strong>{matches.length}</strong> matches and <strong>{activeDeals}</strong> active deals.
           </p>
         </div>
 
-        {/* Rootd Score highlight */}
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '16px', padding: '20px 28px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>Your RootdScore</p>
-          <ScoreMeter score={score} size="lg" />
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>Top 20% of athletes</p>
-        </motion.div>
+        {/* Rootd Score — only show if athlete has taken quiz */}
+        {score !== null && (
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '16px', padding: '20px 28px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>Your RootdScore</p>
+            <ScoreMeter score={score} size="lg" />
+          </motion.div>
+        )}
+
+        {/* Prompt to take quiz if no score yet */}
+        {score === null && (
+          <motion.button initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
+            onClick={() => navigate('/quiz')}
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '16px', padding: '20px 28px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', color: '#fff' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Get Your RootdScore</p>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>Take the 10-min quiz to unlock matches</p>
+          </motion.button>
+        )}
       </div>
 
       <div style={{ padding: '32px 36px' }}>
@@ -83,12 +106,12 @@ export default function AthleteOverview() {
           ))}
         </div>
 
-        {/* Stat cards */}
+        {/* Stat cards — no fake numbers */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-          <StatCard label="Rootd Score" value={score} tone="mint" icon={Star} helper="Top 20% of athletes" />
+          {score !== null && <StatCard label="Rootd Score" value={score} tone="mint" icon={Star} />}
           <StatCard label="Active Deals" value={activeDeals} tone="sky" icon={Handshake} />
           <StatCard label="Total Matches" value={matches.length} tone="sage" icon={TrendingUp} />
-          <StatCard label="Profile Views" value="1.2k" tone="default" icon={Activity} helper="This month" />
+          <StatCard label="Profile Complete" value={`${profilePct}%`} tone="default" icon={Activity} />
         </div>
 
         {/* Matches + Activity */}
@@ -99,7 +122,11 @@ export default function AthleteOverview() {
               View all <ArrowRight size={14} />
             </button>
           }>
-            {matches.slice(0, 3).map(m => (
+            {matches.length === 0 ? (
+              <p style={{ fontSize: '14px', color: palette.charcoalMuted, padding: '12px 0' }}>
+                No matches yet. <button onClick={() => navigate('/quiz')} style={{ color: palette.pine, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>Take the quiz</button> to get matched.
+              </p>
+            ) : matches.slice(0, 3).map(m => (
               <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <div>
                   <p style={{ fontWeight: 600, fontSize: '14px', color: palette.charcoal }}>{m.business}</p>
@@ -114,7 +141,9 @@ export default function AthleteOverview() {
           </SectionCard>
 
           <SectionCard title="Recent Activity" tone="sky">
-            {activity.map(a => (
+            {activity.length === 0 ? (
+              <p style={{ fontSize: '14px', color: palette.charcoalMuted, padding: '12px 0' }}>No activity yet.</p>
+            ) : activity.map(a => (
               <div key={a.id} style={{ display: 'flex', gap: '12px', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <div style={{ width: '32px', height: '32px', background: '#eff6ff', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Activity size={15} color="#1d4ed8" />
@@ -128,8 +157,8 @@ export default function AthleteOverview() {
           </SectionCard>
         </div>
 
-        {/* Profile completion */}
-        <SectionCard title="Profile Completion" tone="sage" subtitle="A complete profile gets 3× more business matches">
+        {/* Profile completion — computed from real data */}
+        <SectionCard title="Profile Completion" tone="sage" subtitle="A complete profile unlocks more business matches">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
             <div style={{ flex: 1, background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
               <motion.div initial={{ width: 0 }} animate={{ width: `${profilePct}%` }} transition={{ duration: 0.8, delay: 0.3 }}
@@ -138,10 +167,10 @@ export default function AthleteOverview() {
             <span style={{ fontSize: '14px', fontWeight: 700, color: palette.pine, whiteSpace: 'nowrap' }}>{profilePct}%</span>
           </div>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            {['Basic info', 'Sport & school', 'Brand interests', 'Social handles'].map((item, i) => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: i < 2 ? palette.pine : palette.charcoalMuted }}>
-                <CheckCircle size={13} color={i < 2 ? palette.pine : '#d1d5db'} />
-                {item}
+            {checks.map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: item.done ? palette.pine : palette.charcoalMuted }}>
+                <CheckCircle size={13} color={item.done ? palette.pine : '#d1d5db'} />
+                {item.label}
               </div>
             ))}
           </div>

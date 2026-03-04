@@ -9,6 +9,8 @@ export default function AthleteEditProfile() {
   const { profile, setProfile } = useProfile()
   const [bio, setBio] = useState(profile?.bio ?? '')
   const [instagram, setInstagram] = useState(profile?.socialFollowers?.instagram ?? '')
+  const [tiktok, setTiktok] = useState(profile?.socialFollowers?.tiktok ?? '')
+  const [twitter, setTwitter] = useState(profile?.socialFollowers?.twitter ?? '')
   const [interests, setInterests] = useState(profile?.interests ?? [])
   const [saved, setSaved] = useState(false)
 
@@ -17,7 +19,12 @@ export default function AthleteEditProfile() {
   }
 
   function save() {
-    setProfile(p => ({ ...p, bio, interests }))
+    setProfile(p => ({
+      ...p,
+      bio,
+      interests,
+      socialFollowers: { instagram, tiktok, twitter },
+    }))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -38,18 +45,20 @@ export default function AthleteEditProfile() {
 
         <SectionCard title="Bio" tone="sky">
           <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell brands about yourself..."
-            style={{ width: '100%', minHeight: '120px', padding: '10px 13px', fontSize: '14px', fontFamily: 'inherit', border: '1px solid #d1d5db', borderRadius: '10px', outline: 'none', resize: 'vertical', color: palette.charcoal }} />
+            style={{ width: '100%', minHeight: '120px', padding: '10px 13px', fontSize: '14px', fontFamily: 'inherit', border: '1px solid #d1d5db', borderRadius: '10px', outline: 'none', resize: 'vertical', color: palette.charcoal, boxSizing: 'border-box' }} />
         </SectionCard>
 
-        <SectionCard title="Social Media" tone="sage">
+        <SectionCard title="Social Media Followers" tone="sage">
+          <p style={{ fontSize: '13px', color: palette.charcoalMuted, marginBottom: '16px' }}>Enter your approximate follower counts to help businesses understand your reach.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-            <TextInput label="Instagram Followers" type="number" value={instagram} onChange={setInstagram} placeholder="12400" />
-            <TextInput label="TikTok Followers" value={profile?.socialFollowers?.tiktok ?? ''} onChange={() => {}} placeholder="8200" />
-            <TextInput label="Twitter Followers" value={profile?.socialFollowers?.twitter ?? ''} onChange={() => {}} placeholder="3100" />
+            <TextInput label="Instagram" type="number" value={instagram} onChange={setInstagram} placeholder="e.g. 12400" />
+            <TextInput label="TikTok" type="number" value={tiktok} onChange={setTiktok} placeholder="e.g. 8200" />
+            <TextInput label="X / Twitter" type="number" value={twitter} onChange={setTwitter} placeholder="e.g. 3100" />
           </div>
         </SectionCard>
 
         <SectionCard title="Interests & Brand Categories" tone="default">
+          <p style={{ fontSize: '13px', color: palette.charcoalMuted, marginBottom: '14px' }}>Select all that apply to your personal brand.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {INTERESTS.map(i => {
               const on = interests.includes(i)

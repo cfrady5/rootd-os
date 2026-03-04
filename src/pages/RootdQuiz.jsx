@@ -251,7 +251,7 @@ export default function RootdQuiz() {
             </h2>
             <p style={{ fontSize: '15px', color: palette.charcoalMuted, maxWidth: '460px', margin: '0 auto' }}>
               {score >= 80
-                ? 'You're in the top tier. Local brands will love your community presence and content quality.'
+                ? "You're in the top tier. Local brands will love your community presence and content quality."
                 : score >= 60
                 ? 'Your profile is solid. A few more partnerships will boost your score significantly.'
                 : 'Great foundation. Fill in your social profiles to unlock higher-scoring matches.'}
